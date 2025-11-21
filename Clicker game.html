@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clicker Game - Idle Edition</title>
+<style>
+  /* Base Styles */
+  body {
+    background: #000000;
+    color: #fff;
+    font-family: 'Inter', Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+      margin-top: 30px;
+      font-size: 1.5rem;
+      color: #999;
+  }
+  h2 {
+      font-size: 2.2rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #fff;
+  }
+  
+  /* Clicker Button */
+  #clicker {
+    width: 150px;
+    height: 150px;
+    background: #0d0d0d;
+    border: 4px solid #00ff99; /* Neon border */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 20px auto;
+    box-shadow: 0 0 10px #00ff99, 0 0 20px #00ff9980, inset 0 0 5px #00ff99;
+    transition: transform 0.1s, box-shadow 0.3s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #clicker:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 5px #00ff99, 0 0 10px #00ff9980, inset 0 0 10px #00ff99;
+  }
+
+  /* Score Display */
+  #score {
+    font-size: 1.8rem;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #fff;
+    font-weight: 800;
+  }
+  #cpsDisplay {
+      color: #00ff99;
+      font-weight: 800;
+  }
+  #userIdDisplay {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 20px;
+      word-break: break-all;
+  }
+
+  /* Stats Panel Styles */
+  #stats-panel {
+      width: 90%;
+      max-width: 350px;
+      margin: 20px auto;
+      padding: 15px;
+      border: 2px solid #00ff99; /* Matching neon border */
+      border-radius: 8px;
+      background-color: #1a1a1a;
+      box-shadow: 0 0 10px #00ff99, 0 0 20px #00ff9980; /* Matching neon shadow */
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      text-align: left;
+      font-size: 0.95rem;
+  }
+  .stat-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed #333;
+      padding-bottom: 5px;
+  }
+  .stat-value {
+      color: #00ff99;
+      font-weight: bold;
+  }
+
+  /* Upgrade Container and Buttons - Optimized for stacking on mobile */
+  #upgrades-container {
+      margin: 20px 0;
+      width: 90%;
+      max-width: 350px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+  }
+  button {
+    padding: 14px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    border: 2px solid #fff;
+    background: transparent;
+    color: white;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, opacity 0.2s;
+    text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    line-height: 1.3;
+  }
+  button:not(:disabled):hover {
+    background: #00ff9910;
+    color: #00ff99;
+    border-color: #00ff99;
+  }
+  button:active {
+    transform: scale(0.98);
+  }
+  button:disabled {
+    border-color: #333;
+    color: #555;
+    cursor: not-allowed;
+  }
+
+  /* Custom Alert/Message Box and Modal Styles (unchanged) */
+  #message-box {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff4d4d;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 0 0 8px 8px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+  }
+  .modal {
+    position: fixed;
+    z-index: 2000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.85); 
+    display: none; 
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-content {
+    background-color: #1a1a1a;
+    padding: 25px;
+    border: 2px solid #00ff99;
+    width: 80%; 
+    max-width: 350px;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0, 255, 153, 0.4);
+    animation: fadeIn 0.3s;
+  }
+  .close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .modal-content input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    margin: 15px 0 25px 0;
+    box-sizing: border-box;
+    border: 2px solid #555;
+    border-radius: 6px;
+    background: #000;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .modal-content button {
+    width: 100%;
+    margin-top: 10px;
+    border-color: #00ff99;
+    color: #00ff99;
+  }
+  .visible {
+      display: flex;
+  }
+
+</style>
+</head>
+<body>
+
+<h1>Clicker Game - Idle Edition</h1>
+<h2>The Idle Clicker</h2>
+<div id="clicker">Click!</div>
+<div id="score">Score: 0 (<span id="cpsDisplay">+0/s</span>)</div>
+<div id="userIdDisplay"></div>
+
+<!-- Stats Panel -->
+<div id="stats-panel">
+    <!-- Stats will be inserted here by JavaScript -->
+</div>
+
+<div id="upgrades-container">
+    <button id="upgrade" disabled>Click Upgrade (Cost: 10)</button>
+    <button id="autoUpgrade" disabled>Auto-Clicker (Cost: 100, +2/s)</button>
+    <button id="saveBtn">Save Game</button>
+    <button id="codeBtn">Enter Code</button>
+</div>
+
+<!-- Custom Error/Info Message Box -->
+<div id="message-box"></div>
+
+<!-- Code Entry Modal Dialog -->
+<div id="code-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" id="closeCodeModal">&times;</span>
+        <h2 class="text-xl">Enter Code Here</h2>
+        <p class="text-gray-400">Redeem a secret code for rewards!</p>
+        <input type="text" id="codeInput" placeholder="Enter code here" autocomplete="off">
+        <button id="submitCodeBtn">Redeem Code</button>
+    </div>
+</div>
+
+<script type="module">
+// --- FIREBASE IMPORTS ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Set Firebase log level for debugging
+setLogLevel('Debug');
+
+// --- FIREBASE GLOBALS ---
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+let db;
+let auth;
+let userId = null;
+let isAuthReady = false;
+
+// --- GAME STATE (Now stored in a single object for saving) ---
+let gameState = {
+    score: 0,
+    perClick: 1,
+    upgradeCost: 10,
+    perSecond: 0,
+    autoClickerCost: 100,
+    nextAutoCpsBonus: 2,
+    totalClicks: 0
+};
+
+// Multipliers
+const CLICK_COST_MULTIPLIER = 1.8; 
+const AUTO_COST_MULTIPLIER = 2.0;
+
+// --- DOM Elements ---
+const clicker = document.getElementById('clicker');
+const scoreDisplay = document.getElementById('score');
+const upgradeBtn = document.getElementById('upgrade');
+const autoClickerBtn = document.getElementById('autoUpgrade');
+const saveBtn = document.getElementById('saveBtn');
+const codeBtn = document.getElementById('codeBtn');
+const codeModal = document.getElementById('code-modal');
+const closeCodeModalBtn = document.getElementById('closeCodeModal');
+const submitCodeBtn = document.getElementById('submitCodeBtn');
+const codeInput = document.getElementById('codeInput');
+const messageBox = document.getElementById('message-box');
+const statsPanel = document.getElementById('stats-panel'); 
+const userIdDisplay = document.getElementById('userIdDisplay');
+
+// --- Persistence Path ---
+const GAME_DATA_COLLECTION = 'game_data';
+const getDocRef = () => doc(db, 'artifacts', appId, 'users', userId, GAME_DATA_COLLECTION, 'savefile');
+
+
+// --- Utility Functions ---
+
+/** * Formats a large number into a shortened string with suffixes (K, M, B, T, etc.).
+ * @param {number} num The number to format.
+ * @returns {string} The formatted string.
+ */
+function formatNumber(num) {
+    num = Math.floor(Math.abs(num)); 
+    if (num < 1000) {
+        return num.toLocaleString(); 
+    }
+
+    const suffixes = ["K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+    const tier = Math.floor(Math.log10(num) / 3) - 1;
+
+    if (tier < 0 || tier >= suffixes.length) {
+        return num.toExponential(2);
+    }
+    
+    const suffix = suffixes[tier];
+    const scale = Math.pow(10, (tier + 1) * 3);
+    const scaled = num / scale;
+
+    let formatted = scaled.toFixed(1);
+    if (formatted.endsWith('.0')) {
+        formatted = formatted.slice(0, -2);
+    }
+    
+    return formatted + suffix;
+}
+
+/** Displays a temporary message at the top of the screen instead of alert(). */
+function displayMessage(message, isError = true) {
+    messageBox.textContent = message;
+    messageBox.style.backgroundColor = isError ? '#ff4d4d' : '#00ff99';
+    messageBox.style.boxShadow = isError 
+        ? '0 0 10px rgba(255, 77, 77, 0.5)' 
+        : '0 0 10px rgba(0, 255, 153, 0.5)';
+    messageBox.style.opacity = '1';
+    
+    setTimeout(() => {
+        messageBox.style.opacity = '0';
+    }, 3000);
+}
+
+/** Updates the dedicated stats panel with detailed metrics. */
+function updateStatsPanel() {
+    // Helper function for consistent formatting
+    const formatStat = (label, value) => `
+        <div class="stat-item">
+            <span>${label}:</span>
+            <span class="stat-value">${formatNumber(value)}</span>
+        </div>
+    `;
+
+    statsPanel.innerHTML = `
+        ${formatStat('Click Value', gameState.perClick)}
+        ${formatStat('TRUE CLICKS', gameState.totalClicks)}
+        ${formatStat('Auto CPS', gameState.perSecond)}
+        ${formatStat('Next Auto Bonus', gameState.nextAutoCpsBonus)}
+    `;
+}
+
+/** Updates all score and button texts/affordability on the screen. */
+function updateDisplay() {
+  // Update Main Score and CPS
+  scoreDisplay.innerHTML = 'Score: ' + formatNumber(Math.floor(gameState.score)) + ' (<span id="cpsDisplay" class="text-[#00ff99]">' + '+' + formatNumber(Math.floor(gameState.perSecond)) + '/s</span>)';
+  
+  // --- Click Upgrade Button ---
+  const nextPerClickIncrease = Math.ceil(gameState.perClick * 0.5); 
+  const nextClickValue = gameState.perClick + nextPerClickIncrease;
+
+  upgradeBtn.textContent = `Click Upgrade (Cost: ${formatNumber(Math.floor(gameState.upgradeCost))}, +${formatNumber(nextClickValue)} per click)`;
+  upgradeBtn.disabled = gameState.score < gameState.upgradeCost;
+
+  // --- Auto-Clicker Button ---
+  autoClickerBtn.textContent = `Auto-Clicker (Cost: ${formatNumber(Math.floor(gameState.autoClickerCost))}, +${formatNumber(gameState.nextAutoCpsBonus)}/s)`;
+  autoClickerBtn.disabled = gameState.score < gameState.autoClickerCost;
+
+  // Update the new Stats Panel
+  updateStatsPanel();
+}
+
+// --- Persistence Functions (Firestore) ---
+
+async function saveGame() {
+    if (!isAuthReady) {
+        displayMessage('Authentication not ready. Cannot save.', true);
+        return;
+    }
+    try {
+        await setDoc(getDocRef(), gameState);
+        displayMessage('Game saved successfully!', false);
+    } catch (error) {
+        console.error("Error saving document: ", error);
+        displayMessage('Error saving game. Check console.', true);
+    }
+}
+
+async function loadGame() {
+    if (!isAuthReady) return;
+
+    try {
+        const docSnap = await getDoc(getDocRef());
+
+        if (docSnap.exists()) {
+            const loadedState = docSnap.data();
+            
+            // Apply loaded state to the global gameState object
+            Object.keys(gameState).forEach(key => {
+                // Ensure loaded values are numbers, especially for Firestore numbers which might be BigInt/other types.
+                if (typeof loadedState[key] !== 'undefined') {
+                    gameState[key] = Number(loadedState[key]);
+                }
+            });
+
+            displayMessage('Game loaded successfully!', false);
+        } else {
+            console.log("No saved game found, starting new game.");
+        }
+        updateDisplay();
+    } catch (error) {
+        console.error("Error loading document: ", error);
+        displayMessage('Error loading game. Starting new game.', true);
+        updateDisplay(); // Display default state if loading fails
+    }
+}
+
+
+// --- Game Logic Functions ---
+
+function clickAction() {
+  gameState.score += gameState.perClick;
+  gameState.totalClicks++;
+  updateDisplay();
+}
+
+function upgradePerClick() {
+  if (gameState.score >= gameState.upgradeCost) {
+    gameState.score -= gameState.upgradeCost;
+    
+    const increaseAmount = Math.ceil(gameState.perClick * 0.5);
+    gameState.perClick += increaseAmount;
+    
+    gameState.upgradeCost = Math.floor(gameState.upgradeCost * CLICK_COST_MULTIPLIER);
+    updateDisplay();
+    displayMessage(`Click Power UP! Now +${formatNumber(gameState.perClick)} per click.`, false);
+  } else {
+    displayMessage('Not enough points for Click Upgrade!', true);
+  }
+}
+
+function buyAutoClicker() {
+  if (gameState.score >= gameState.autoClickerCost) {
+    gameState.score -= gameState.autoClickerCost;
+    
+    // 1. Apply the exponential bonus
+    gameState.perSecond += gameState.nextAutoCpsBonus; 
+    
+    // 2. Double the bonus for the next purchase
+    const bonusGained = gameState.nextAutoCpsBonus;
+    gameState.nextAutoCpsBonus *= 2; 
+    
+    // 3. Double the cost for the next purchase
+    gameState.autoClickerCost = Math.floor(gameState.autoClickerCost * AUTO_COST_MULTIPLIER); 
+    
+    updateDisplay(); 
+    displayMessage(`Auto-Clicker Purchased! +${formatNumber(bonusGained)}/s added. Total: +${formatNumber(gameState.perSecond)}/s.`, false);
+  } else {
+    displayMessage('Not enough points for Auto-Clicker!', true);
+  }
+}
+
+// --- Code Modal Functions ---
+
+function showCodeEntryModal() {
+    codeModal.classList.add('visible');
+    setTimeout(() => {
+        codeInput.focus();
+    }, 100);
+}
+
+function closeCodeEntryModal() {
+    codeModal.classList.remove('visible');
+    codeInput.value = ''; 
+}
+
+function processCode() {
+    const code = codeInput.value.trim().toUpperCase();
+    
+    if (code === 'DEVELOPER') {
+        gameState.score += 1000000; 
+        displayMessage('Code REDEEMED! +1.0M Score!', false);
+    } else if (code === 'IDLEMASTER') {
+        gameState.perSecond += 10;
+        displayMessage('Code REDEEMED! +10/s Income!', false);
+    } else {
+        displayMessage('Invalid Code!', true);
+    }
+
+    updateDisplay(); 
+    closeCodeEntryModal();
+}
+
+// --- The Game Loop for Passive Income (runs every 1 second) ---
+setInterval(() => {
+  gameState.score += gameState.perSecond;
+  
+  if (gameState.perSecond > 0 || gameState.score > 0) {
+      updateDisplay();
+  }
+}, 1000);
+
+
+// --- Initialization and Event Listeners ---
+window.onload = function() {
+    
+    // 1. Initialize Firebase
+    try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        // 2. Authenticate and Listen for State Change
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in
+                userId = user.uid;
+                isAuthReady = true;
+                userIdDisplay.textContent = `User ID: ${userId}`;
+                console.log("Firebase Auth Ready. User ID:", userId);
+                
+                // 3. Load game state after authentication
+                loadGame(); 
+            } else {
+                // User is signed out, handle sign in
+                isAuthReady = false;
+                userId = crypto.randomUUID(); // Use a random ID if anonymous sign-in fails
+                console.log("Attempting sign-in...");
+                
+                if (initialAuthToken) {
+                    signInWithCustomToken(auth, initialAuthToken)
+                        .catch(e => {
+                            console.error("Custom token sign-in failed:", e);
+                            signInAnonymously(auth); // Fallback to anonymous sign-in
+                        });
+                } else {
+                    signInAnonymously(auth);
+                }
+            }
+        });
+
+    } catch (e) {
+        console.error("Firebase Initialization Failed:", e);
+        displayMessage("Error initializing database. Game state will not save.", true);
+        isAuthReady = false;
+        // Fallback: simply start the game without persistence
+        updateDisplay();
+    }
+    
+    // 4. Attach Event Listeners
+    clicker.addEventListener('click', clickAction);
+    upgradeBtn.addEventListener('click', upgradePerClick);
+    autoClickerBtn.addEventListener('click', buyAutoClicker);
+    saveBtn.addEventListener('click', saveGame); // New save button listener
+
+    // Code Modal Interaction
+    codeBtn.addEventListener('click', showCodeEntryModal);
+    closeCodeModalBtn.addEventListener('click', closeCodeEntryModal);
+    submitCodeBtn.addEventListener('click', processCode);
+
+    codeInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); 
+            processCode();
+        }
+    });
+
+    window.addEventListener('click', (event) => {
+        if (event.target === codeModal) {
+            closeCodeEntryModal();
+        }
+    });
+};
+</script>
+
+</body>
+</html>
+
